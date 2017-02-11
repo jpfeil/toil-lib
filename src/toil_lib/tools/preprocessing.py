@@ -164,7 +164,7 @@ def picard_mark_duplicates(job, bam, bai, validation_stringency='LENIENT'):
     return bam, bai
 
 
-def run_gatk_preprocessing(job, bam, bai, ref, ref_dict, fai, g1k, mills, dbsnp, realign=False, unsafe=False):
+def run_gatk_preprocessing(job, bam, bai, ref, ref_dict, fai, g1k, mills, dbsnp, intervals=None, realign=False, unsafe=False):
     """
     GATK Preprocessing Pipeline
     0: Mark duplicates
@@ -222,6 +222,7 @@ def run_gatk_preprocessing(job, bam, bai, ref, ref_dict, fai, g1k, mills, dbsnp,
                                          mdups.rv(1),
                                          ref, ref_dict, fai,
                                          g1k, mills,
+                                         intervals=intervals,
                                          unsafe=unsafe,
                                          cores=1,  # RealignerTargetCreator is single threaded
                                          disk=realigner_target_disk,
@@ -273,6 +274,7 @@ def run_gatk_preprocessing(job, bam, bai, ref, ref_dict, fai, g1k, mills, dbsnp,
                                bqsr_input_bai,
                                ref, ref_dict, fai,
                                dbsnp, mills,
+                               intervals=intervals,
                                unsafe=unsafe,
                                cores=job.cores,
                                disk=base_recal_disk,
