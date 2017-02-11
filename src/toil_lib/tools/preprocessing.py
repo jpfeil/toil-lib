@@ -304,7 +304,7 @@ def run_gatk_preprocessing(job, bam, bai, ref, ref_dict, fai, g1k, mills, dbsnp,
     return recalibrate_reads.rv(0), recalibrate_reads.rv(1)
 
 
-def run_realigner_target_creator(job, bam, bai, ref, ref_dict, fai, g1k, mills, unsafe=False):
+def run_realigner_target_creator(job, bam, bai, ref, ref_dict, fai, g1k, mills, intervals=None, unsafe=False):
     """
     Creates intervals file needed for INDEL realignment
 
@@ -316,6 +316,7 @@ def run_realigner_target_creator(job, bam, bai, ref, ref_dict, fai, g1k, mills, 
     :param str fai: FileStoreID for reference fasta index file
     :param str g1k: FileStoreID for 1000 Genomes VCF file
     :param str mills: FileStoreID for Mills VCF file
+    :param str intervals: FileStoreID for BED file containing analysis intervals
     :param bool unsafe: If True, runs GATK in UNSAFE mode: "-U ALLOW_SEQ_DICT_INCOMPATIBILITY"
     :return: FileStoreID for realignment intervals file
     :rtype: str
@@ -342,6 +343,11 @@ def run_realigner_target_creator(job, bam, bai, ref, ref_dict, fai, g1k, mills, 
                   '-known', '/data/mills.vcf',
                   '--downsampling_type', 'NONE',
                   '-o', '/data/sample.intervals']
+
+    if intervals:
+        job.fileStore.readGlobalFile(intervals, os.path.join(work_dir, 'intervals.bed'))
+        parameters.extend(['-L', 'intervals.bed'])
+
     if unsafe:
         parameters.extend(['-U', 'ALLOW_SEQ_DICT_INCOMPATIBILITY'])
 
@@ -416,7 +422,7 @@ def run_indel_realignment(job, intervals, bam, bai, ref, ref_dict, fai, g1k, mil
     return indel_bam, indel_bai
 
 
-def run_base_recalibration(job, bam, bai, ref, ref_dict, fai, dbsnp, mills, unsafe=False):
+def run_base_recalibration(job, bam, bai, ref, ref_dict, fai, dbsnp, mills, intervals=None, unsafe=False):
     """
     Creates recalibration table for Base Quality Score Recalibration
 
@@ -428,6 +434,7 @@ def run_base_recalibration(job, bam, bai, ref, ref_dict, fai, dbsnp, mills, unsa
     :param str fai: FileStoreID for reference genome fasta index file
     :param str dbsnp: FileStoreID for dbSNP VCF file
     :param str mills: FileStoreID for Mills VCF file
+    :param str intervals: FileStoreID for BED file containing analysis intervals
     :param bool unsafe: If True, runs GATK in UNSAFE mode: "-U ALLOW_SEQ_DICT_INCOMPATIBILITY"
     :return: FileStoreID for the recalibration table file
     :rtype: str
@@ -454,6 +461,10 @@ def run_base_recalibration(job, bam, bai, ref, ref_dict, fai, dbsnp, mills, unsa
                   '-knownSites', '/data/dbsnp.vcf',
                   '-knownSites', '/data/mills.vcf',
                   '-o', '/data/recal_data.table']
+
+    if intervals:
+        job.fileStore.readGlobalFile(intervals, os.path.join(work_dir, 'intervals.bed'))
+        parameters.extend(['-L', 'intervals.bed'])
 
     if unsafe:
         parameters.extend(['-U', 'ALLOW_SEQ_DICT_INCOMPATIBILITY'])
